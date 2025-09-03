@@ -1,0 +1,21 @@
+# 공통
+node_modules/
+dist/
+*.log
+.env
+.env.production
+
+# 에디터
+.vscode/
+.DS_Store
+.idea/
+
+# 빌드 산출물
+build/
+out/
+coverage/
+
+# 기타
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
