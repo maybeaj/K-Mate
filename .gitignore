@@ -5,8 +5,11 @@ dist/
 .env
 .env.production
 
+# 수정 (폴더 전체는 무시, settings.json만 예외로 올리기)
+.vscode/*
+!.vscode/settings.json
+
 # 에디터
-.vscode/
 .DS_Store
 .idea/
 
