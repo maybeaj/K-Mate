@@ -1,5 +1,5 @@
 /* Tailwind v4 – CSS-first */
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* v4 의미 토큰: bg-background / text-foreground / border-border 등 생성 */
 @theme {
@@ -156,15 +156,15 @@
 			ui-sans-serif,
 			system-ui,
 			-apple-system,
-			"Segoe UI",
+			'Segoe UI',
 			Roboto,
-			"Noto Sans",
+			'Noto Sans',
 			Ubuntu,
 			Cantarell,
-			"Helvetica Neue",
+			'Helvetica Neue',
 			Arial,
-			"Apple Color Emoji",
-			"Segoe UI Emoji"
+			'Apple Color Emoji',
+			'Segoe UI Emoji'
 		);
 	}
 
@@ -176,8 +176,8 @@
 			Menlo,
 			Monaco,
 			Consolas,
-			"Liberation Mono",
-			"Courier New",
+			'Liberation Mono',
+			'Courier New',
 			monospace
 		);
 	}

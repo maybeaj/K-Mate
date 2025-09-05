@@ -1,19 +1,23 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Header from "../components/layout/Header";
-import HomePage from "../pages/HomePage";
-import AuthCallbackPage from "../pages/AuthCallbackPage";
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Header from '../components/layout/Header'
+import MainPage from '../pages/MainPage'
+import KmapPage from '../pages/KmapPage'
+import AuthCallbackPage from '../pages/AuthCallbackPage'
 
 const AppRouter = () => {
 	return (
 		<BrowserRouter>
 			<Header />
-			<Routes>
-				<Route path="/" element={<HomePage />} />
-				<Route path="/auth/callback" element={<AuthCallbackPage />} />
-				{/* 필요한 페이지 추가 가능 */}
-			</Routes>
+			<main className="pt-14">
+				<Routes>
+					<Route path="/" element={<MainPage />} />
+					<Route path="/auth/callback" element={<AuthCallbackPage />} />
+					<Route path="/kmap" element={<KmapPage />} />
+					{/* 여기에 /course, /buzz 도 추가 가능 */}
+				</Routes>
+			</main>
 		</BrowserRouter>
-	);
-};
+	)
+}
 
-export default AppRouter;
+export default AppRouter

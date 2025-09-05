@@ -1,9 +1,9 @@
-import { ConfigType } from "@nestjs/config";
-import { Provider } from "@nestjs/common";
-import * as mysql from "mysql2/promise";
-import databaseConfig from "../../config/database.config";
+import { ConfigType } from '@nestjs/config'
+import { Provider } from '@nestjs/common'
+import * as mysql from 'mysql2/promise'
+import databaseConfig from '../../config/database.config'
 
-export const DB_POOL = Symbol("DB_POOL");
+export const DB_POOL = Symbol('DB_POOL')
 
 export const DbProvider: Provider = {
 	provide: DB_POOL,
@@ -19,7 +19,7 @@ export const DbProvider: Provider = {
 			connectionLimit: dbCfg.connectionLimit,
 			queueLimit: 0,
 			dateStrings: true,
-		});
-		return pool;
+		})
+		return pool
 	},
-};
+}

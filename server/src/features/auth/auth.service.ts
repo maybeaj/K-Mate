@@ -1,15 +1,15 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
-import type { Pool } from "mysql2/promise";
-import { DB_POOL } from "../../common/utils/db.provider";
+import { Inject, Injectable } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
+import type { Pool } from 'mysql2/promise'
+import { DB_POOL } from '../../common/utils/db.provider'
 
 type GoogleUser = {
-	google_sub: string;
-	email?: string;
-	name?: string;
-	avatar_url?: string;
-	email_verified?: boolean;
-};
+	google_sub: string
+	email?: string
+	name?: string
+	avatar_url?: string
+	email_verified?: boolean
+}
 
 @Injectable()
 export class AuthService {
@@ -36,30 +36,26 @@ export class AuthService {
 				gu.avatar_url ?? null,
 				gu.email_verified ? 1 : 0,
 			]
-		);
+		)
 
 		const [rows] = await this.pool.query(
 			`SELECT id, email, name, role FROM users WHERE google_sub = ? LIMIT 1`,
 			[gu.google_sub]
-		);
-		const user = Array.isArray(rows) ? (rows as any[])[0] : null;
-		return user; // { id, email, name, role }
+		)
+		const user = Array.isArray(rows) ? (rows as any[])[0] : null
+		return user // { id, email, name, role }
 	}
 
-	async issueJwt(user: {
-		id: number;
-		email?: string;
-		role?: "user" | "admin";
-	}) {
+	async issueJwt(user: { id: number; email?: string; role?: 'user' | 'admin' }) {
 		const payload = {
 			sub: user.id,
 			email: user.email,
-			role: user.role ?? "user",
-		};
+			role: user.role ?? 'user',
+		}
 		const accessToken = await this.jwt.signAsync(payload, {
 			secret: process.env.JWT_SECRET!,
-			expiresIn: process.env.JWT_EXPIRES_IN ?? "3600s",
-		});
-		return { accessToken };
+			expiresIn: process.env.JWT_EXPIRES_IN ?? '3600s',
+		})
+		return { accessToken }
 	}
 }

@@ -1,13 +1,13 @@
-import type React from "react";
+import type React from 'react'
 
 const Sidebar: React.FC = () => {
 	const menuItems = [
-		{ icon: "☰", label: "Menu" },
-		{ icon: "🔖", label: "Bookmark" },
-		{ icon: "📍", label: "K-Travel" },
-		{ icon: "🍽️", label: "K-Food" },
-		{ icon: "☕", label: "K-Cafe" },
-	];
+		{ icon: '☰', label: 'Menu' },
+		{ icon: '🔖', label: 'Bookmark' },
+		{ icon: '📍', label: 'K-Travel' },
+		{ icon: '🍽️', label: 'K-Food' },
+		{ icon: '☕', label: 'K-Cafe' },
+	]
 
 	return (
 		<aside className="flex flex-col items-center w-16 py-4 space-y-4 bg-white border-r border-gray-200 shadow-sm">
@@ -29,7 +29,7 @@ const Sidebar: React.FC = () => {
 				</button>
 			</div>
 		</aside>
-	);
-};
+	)
+}
 
-export default Sidebar;
+export default Sidebar
