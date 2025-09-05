@@ -11,6 +11,17 @@ type GoogleUser = {
 	email_verified?: boolean
 }
 
+function ttlToMs(ttl: string | undefined, fallbackMs: number) {
+	if (!ttl) return fallbackMs
+	// 아주 단순 파서: 15m, 7d 형태만 처리
+	const m = ttl.match(/^(\d+)([smhd])$/i)
+	if (!m) return fallbackMs
+	const n = Number(m[1])
+	const u = m[2].toLowerCase()
+	const mult = u === 's' ? 1 : u === 'm' ? 60 : u === 'h' ? 3600 : 86400
+	return n * mult * 1000
+}
+
 @Injectable()
 export class AuthService {
 	constructor(
@@ -19,7 +30,6 @@ export class AuthService {
 	) {}
 
 	async upsertUser(gu: GoogleUser) {
-		// UNIQUE KEY(google_sub), email UNIQUE임을 활용한 upsert
 		await this.pool.query(
 			`INSERT INTO users (google_sub, email, name, avatar_url, email_verified)
         VALUES (?, ?, ?, ?, ?)
@@ -46,16 +56,30 @@ export class AuthService {
 		return user // { id, email, name, role }
 	}
 
-	async issueJwt(user: { id: number; email?: string; role?: 'user' | 'admin' }) {
-		const payload = {
-			sub: user.id,
-			email: user.email,
-			role: user.role ?? 'user',
-		}
-		const accessToken = await this.jwt.signAsync(payload, {
+	async issueTokens(user: { id: number; email?: string; role?: 'user' | 'admin' }) {
+		const payload = { sub: user.id, email: user.email, role: user.role ?? 'user' }
+
+		const accessTtl = process.env.ACCESS_TOKEN_TTL ?? '15m'
+		const refreshTtl = process.env.REFRESH_TOKEN_TTL ?? '7d'
+
+		const access = await this.jwt.signAsync(payload, {
 			secret: process.env.JWT_SECRET!,
-			expiresIn: process.env.JWT_EXPIRES_IN ?? '3600s',
+			expiresIn: accessTtl,
 		})
-		return { accessToken }
+		const refresh = await this.jwt.signAsync(payload, {
+			secret: process.env.JWT_SECRET!,
+			expiresIn: refreshTtl,
+		})
+
+		return {
+			access,
+			refresh,
+			accessMaxAgeMs: ttlToMs(accessTtl, 15 * 60 * 1000),
+			refreshMaxAgeMs: ttlToMs(refreshTtl, 7 * 24 * 60 * 60 * 1000),
+		}
+	}
+
+	async verifyRefresh(token: string) {
+		return this.jwt.verifyAsync(token, { secret: process.env.JWT_SECRET! })
 	}
 }
