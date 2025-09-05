@@ -1,35 +1,36 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
-import appConfig from './config/app.config'
-import databaseConfig from './config/database.config'
-import { DbProvider } from './common/utils/db.provider'
+import { TypeOrmModule } from '@nestjs/typeorm'
 
-// 각 feature 모듈 import
+// feature modules
 import { AuthModule } from './features/auth/auth.module'
-import { DatabaseModule } from './database/database.module'
-//import { UsersModule } from './features/users/users.module';
-//import { PlacesModule } from './features/places/places.module';
-//import { PostsModule } from './features/posts/posts.module';
-//import { BookmarksModule } from './features/bookmarks/bookmarks.module';
-//import { InteractionsModule } from './features/interactions/interactions.module';
-//import { CommentsModule } from './features/comments/comments.module';
 
 @Module({
 	imports: [
-		ConfigModule.forRoot({
-			isGlobal: true,
-			load: [appConfig, databaseConfig],
-			envFilePath: ['.env', '.env.local', '.env.development'],
+		// .env 로드 (전역)
+		ConfigModule.forRoot({ isGlobal: true }),
+
+		// TypeORM 전역 연결
+		TypeOrmModule.forRootAsync({
+			useFactory: () => ({
+				type: 'mysql',
+				host: process.env.DB_HOST,
+				port: Number(process.env.DB_PORT ?? 3306),
+				username: process.env.DB_USER,
+				password: process.env.DB_PASS,
+				database: process.env.DB_NAME,
+				charset: 'utf8mb4',
+				// 엔티티 자동 로드(각 feature 모듈 forFeature에 등록된 엔티티를 자동 포함)
+				autoLoadEntities: true,
+				// 개발 중에만 true 고려, 운영은 반드시 false
+				synchronize: false,
+				// logging: true,
+			}),
 		}),
-		DatabaseModule, // ⬅️ 전역 모듈 등록
+
+		// features
 		AuthModule,
-		//UsersModule,
-		//PlacesModule,
-		//PostsModule,
-		//BookmarksModule,
-		//InteractionsModule,
-		//CommentsModule,
+		// UsersModule, PlacesModule, ... (추가 시 여기에 import)
 	],
-	providers: [DbProvider],
 })
 export class AppModule {}

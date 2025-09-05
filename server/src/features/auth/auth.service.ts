@@ -1,7 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common'
+// src/features/auth/auth.service.ts
+import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import type { Pool } from 'mysql2/promise'
-import { DB_POOL } from '../../common/utils/db.provider'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { User, UserRole } from '../users/user.entity'
 
 type GoogleUser = {
 	google_sub: string
@@ -13,7 +15,6 @@ type GoogleUser = {
 
 function ttlToMs(ttl: string | undefined, fallbackMs: number) {
 	if (!ttl) return fallbackMs
-	// 아주 단순 파서: 15m, 7d 형태만 처리
 	const m = ttl.match(/^(\d+)([smhd])$/i)
 	if (!m) return fallbackMs
 	const n = Number(m[1])
@@ -26,37 +27,45 @@ function ttlToMs(ttl: string | undefined, fallbackMs: number) {
 export class AuthService {
 	constructor(
 		private readonly jwt: JwtService,
-		@Inject(DB_POOL) private readonly pool: Pool
+		@InjectRepository(User) private readonly users: Repository<User>
 	) {}
 
+	/**
+	 * users(email UNIQUE, google_sub UNIQUE) 기준으로 upsert
+	 * - email 키로 충돌해도 google_sub, name, avatar_url 등 최신화
+	 * - 이후 google_sub 우선, 없으면 email로 조회
+	 */
 	async upsertUser(gu: GoogleUser) {
-		await this.pool.query(
-			`INSERT INTO users (google_sub, email, name, avatar_url, email_verified)
-        VALUES (?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-        email = VALUES(email),
-        name = VALUES(name),
-        avatar_url = VALUES(avatar_url),
-        email_verified = VALUES(email_verified),
-        updated_at = CURRENT_TIMESTAMP`,
-			[
-				gu.google_sub,
-				gu.email ?? null,
-				gu.name ?? null,
-				gu.avatar_url ?? null,
-				gu.email_verified ? 1 : 0,
-			]
+		if (!gu.google_sub) throw new Error('google_sub missing')
+
+		// 스키마가 email NOT NULL이면 email이 반드시 있어야 함
+		if (!gu.email) throw new Error('email missing from Google profile')
+
+		// TypeORM upsert (MySQL은 내부적으로 ON DUPLICATE KEY UPDATE 사용)
+		await this.users.upsert(
+			{
+				google_sub: gu.google_sub,
+				email: gu.email,
+				name: gu.name ?? 'User',
+				avatar_url: gu.avatar_url ?? null,
+				email_verified: gu.email_verified ? 1 : 0,
+				role: 'user',
+			},
+			// conflictPaths는 MySQL에선 고유 키 기준으로 동작. 명시해도 무방.
+			{ conflictPaths: ['google_sub', 'email'], skipUpdateIfNoValuesChanged: true }
 		)
 
-		const [rows] = await this.pool.query(
-			`SELECT id, email, name, role FROM users WHERE google_sub = ? LIMIT 1`,
-			[gu.google_sub]
-		)
-		const user = Array.isArray(rows) ? (rows as any[])[0] : null
-		return user // { id, email, name, role }
+		// google_sub로 우선 조회, 없으면 email로 보조 조회
+		const user =
+			(await this.users.findOne({ where: { google_sub: gu.google_sub } })) ??
+			(await this.users.findOne({ where: { email: gu.email } }))
+
+		if (!user) throw new Error('upsert succeeded but user not found')
+
+		return user // { id, email, name, role, ... }
 	}
 
-	async issueTokens(user: { id: number; email?: string; role?: 'user' | 'admin' }) {
+	async issueTokens(user: { id: number; email?: string; role?: UserRole }) {
 		const payload = { sub: user.id, email: user.email, role: user.role ?? 'user' }
 
 		const accessTtl = process.env.ACCESS_TOKEN_TTL ?? '15m'
